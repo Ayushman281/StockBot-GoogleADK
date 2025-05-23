@@ -1,0 +1,22 @@
+{
+    "name": "stockbot-google-adk",
+    "version": "1.0.0",
+    "description": "Multi-Agent Stock Analysis System using Google ADK",
+    "main": "index.js",
+    "scripts": {
+        "start-backend": "cd backend && python main.py",
+        "start-frontend": "cd frontend && npm start",
+        "start": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+        "install-backend": "cd backend && pip install -r requirements.txt",
+        "install-frontend": "cd frontend && npm install",
+        "install-all": "npm run install-backend && npm run install-frontend",
+        "build-frontend": "cd frontend && npm run build",
+        "test-frontend": "cd frontend && npm test",
+        "test-backend": "cd backend && pytest"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "concurrently": "^8.0.1"
+    }
+}

@@ -1,0 +1,82 @@
+import React, { useState } from 'react';
+import SearchBar from './components/SearchBar';
+import ResultsDashboard from './components/ResultsDashboard';
+import ExampleQueries from './components/ExampleQueries';
+import { queryStockBot } from './services/api';
+
+function App() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [results, setResults] = useState(null);
+  const [query, setQuery] = useState('');
+
+  const handleSearch = async (searchQuery) => {
+    setQuery(searchQuery);
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const data = await queryStockBot(searchQuery);
+      setResults(data);
+    } catch (err) {
+      setError('Sorry, we encountered an error processing your request. Please try again.');
+      console.error('Search error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExampleClick = (exampleQuery) => {
+    setQuery(exampleQuery);
+    handleSearch(exampleQuery);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-[#1E40AF] text-white p-4 shadow-md">
+        <div className="container mx-auto flex items-center">
+          <h1 className="text-2xl font-bold">StockBot</h1>
+          <span className="ml-2 text-sm bg-blue-700 px-2 py-1 rounded-full">Beta</span>
+        </div>
+      </header>
+      
+      <main className="container mx-auto px-4 py-6 flex-1 flex flex-col">
+        <SearchBar onSearch={handleSearch} initialQuery={query} isLoading={isLoading} />
+        
+        <div className="mt-4">
+          <ExampleQueries onExampleClick={handleExampleClick} />
+        </div>
+        
+        {error && (
+          <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+          </div>
+        )}
+        
+        {isLoading ? (
+          <div className="mt-8 flex-1 flex flex-col items-center justify-center">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="h-12 w-12 bg-blue-200 rounded-full mb-4"></div>
+              <div className="h-4 w-48 bg-blue-200 rounded mb-2"></div>
+              <div className="h-4 w-36 bg-blue-200 rounded"></div>
+            </div>
+          </div>
+        ) : results ? (
+          <ResultsDashboard results={results} query={query} />
+        ) : (
+          <div className="mt-8 flex-1 flex flex-col items-center justify-center text-gray-500">
+            <p className="text-lg">Ask StockBot about any stock to get started</p>
+          </div>
+        )}
+      </main>
+      
+      <footer className="bg-gray-100 border-t border-gray-200 py-4">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-600">
+          <p>StockBot &copy; 2025 | Data provided for informational purposes only</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
