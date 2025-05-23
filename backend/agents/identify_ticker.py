@@ -159,7 +159,6 @@ class IdentifyTickerAgent:
             else:
                 return 'quarter'
         
-        # Check for week(s) pattern
         if 'week' in query_lower:
             weeks_match = re.search(r'(\d+)\s+week', query_lower)
             if weeks_match:
@@ -170,9 +169,8 @@ class IdentifyTickerAgent:
                     return 'month'
                 else:
                     return 'quarter'
-            return 'week'  # Default if just "week" is mentioned
+            return 'week' 
         
-        # Check for month(s) pattern
         if 'month' in query_lower:
             months_match = re.search(r'(\d+)\s+month', query_lower)
             if months_match:
@@ -183,13 +181,11 @@ class IdentifyTickerAgent:
                     return 'quarter'
                 else:
                     return 'year'
-            return 'month'  # Default if just "month" is mentioned
+            return 'month' 
         
-        # Check for year pattern
         if 'year' in query_lower:
             return 'year'
-        
-        # Default to today if no timeframe mentioned
+    
         return 'today'
 
     def identify(self, query):
@@ -215,7 +211,7 @@ class IdentifyTickerAgent:
         original_query = query
         query_lower = query.lower()
         
-        # First try direct ticker mentions - they're most explicit
+        # First try direct ticker mentions
         ticker_matches = self.ticker_pattern.findall(original_query)
         if ticker_matches:
             ticker = ticker_matches[0]
@@ -255,9 +251,9 @@ class IdentifyTickerAgent:
                     "confidence": 0.9
                 }
         
-        # Try multi-word company names - start with longer phrases and work down
+        # Try multi-word company names 
         n = len(cleaned_tokens)
-        max_phrase_length = min(5, n)  # Max 5-word phrases
+        max_phrase_length = min(5, n) 
         
         for phrase_length in range(max_phrase_length, 0, -1):
             for i in range(n - phrase_length + 1):
