@@ -1,6 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// Add explicit type for the Node.js process
+declare const process: {
+  env: {
+    NODE_ENV?: string;
+    REACT_APP_USE_MOCK_DATA?: string;
+  }
+};
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
