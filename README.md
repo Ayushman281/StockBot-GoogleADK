@@ -178,7 +178,6 @@ StockBot can handle a variety of natural language questions. Here are some examp
 The following environment variables should be configured in your `.env` file:
 
 ```
-ALPHA_VANTAGE_API_KEY=your_key_here
 NEWS_API_KEY=your_key_here
 FMP_API_KEY=your_key_here
 OPENROUTER_API_KEY=your_key_here
@@ -200,6 +199,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- Financial data provided by Financial Modeling Prep and Yahoo Finance
+- Financial data provided by Financial Modeling Prep and NewsAPI
 - NLP powered by OpenRouter AI's deepseek/deepseek-chat model
 
