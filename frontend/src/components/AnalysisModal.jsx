@@ -57,9 +57,7 @@ const AnalysisModal = ({ isOpen, onClose, analysis, ticker }) => {
       let currentSection = [];
       
       lines.forEach((line, index) => {
-        // Check if line is a heading
         if (line.startsWith('##')) {
-          // Push previous section if it exists
           if (currentSection.length > 0) {
             sections.push(currentSection.join('\n'));
             currentSection = [];
@@ -82,7 +80,6 @@ const AnalysisModal = ({ isOpen, onClose, analysis, ticker }) => {
         const sectionLines = section.split('\n');
         const firstLine = sectionLines[0];
         
-        // Main heading (h2)
         if (firstLine.startsWith('## ')) {
           return (
             <div key={i} className="mb-4">
@@ -99,7 +96,6 @@ const AnalysisModal = ({ isOpen, onClose, analysis, ticker }) => {
             </div>
           );
         } 
-        // Subheading (h3)
         else if (firstLine.startsWith('### ')) {
           return (
             <div key={i} className="mb-4">
@@ -116,7 +112,7 @@ const AnalysisModal = ({ isOpen, onClose, analysis, ticker }) => {
             </div>
           );
         }
-        // Regular paragraph or content without heading
+
         else {
           return (
             <div key={i} className="mb-4 font-normal">
