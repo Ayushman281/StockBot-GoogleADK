@@ -51,6 +51,34 @@ Example:
 What is the current price of AAPL stock?
 ```
 
+## Example Queries and Responses
+
+StockBot can handle a variety of natural language questions. Here are some examples:
+
+### Price Movement Queries
+
+**Query:** "Why did Tesla stock drop today?"  
+**Response:** "Tesla, Inc. (TSLA) stock decreased by 3.2% today. This appears to be related to recent supply chain disruptions and increased competition in the EV market, as reported in recent news about production delays at the Shanghai factory."
+
+**Query:** "How has Apple performed this week?"  
+**Response:** "Apple Inc. (AAPL) stock has increased by 2.4% this week. The positive performance coincides with the announcement of new product releases and better-than-expected quarterly earnings results."
+
+### Market Analysis Queries
+
+**Query:** "What's happening with Microsoft stock recently?"  
+**Response:** "Microsoft Corporation (MSFT) is currently trading at $337.50, up 1.8% this month. Recent news highlights strong cloud service growth and strategic AI partnerships that have positively influenced investor sentiment."
+
+**Query:** "Compare NVIDIA and AMD performance"  
+**Response:** "NVIDIA (NVDA) has outperformed AMD with a 5.3% increase this week compared to AMD's 1.2% gain. NVIDIA's strong performance is attributed to growing demand for its AI chips, while AMD continues to face more competitive pressure in the consumer GPU market."
+
+### Timeframe-Specific Queries
+
+**Query:** "What happened to Amazon stock in the last 30 days?"  
+**Response:** "Amazon.com, Inc. (AMZN) stock has decreased by 4.1% over the last month. This decline coincides with concerns about consumer spending slowdown and recent announcements about increasing competition in the cloud services sector."
+
+**Query:** "Is Walmart stock up year-to-date?"  
+**Response:** "Yes, Walmart Inc. (WMT) stock is up 12.4% year-to-date. The company has benefited from strong retail performance and successful expansion of its e-commerce capabilities during inflationary market conditions."
+
 ## API Endpoints
 
 StockBot provides the following API endpoints:

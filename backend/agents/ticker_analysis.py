@@ -1,6 +1,7 @@
 from datetime import datetime
 import re
 import logging
+from utils.llm import generate_analysis_with_llm  # Updated import
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -25,6 +26,7 @@ class TickerAnalysisAgent:
         if not ticker:
             return {
                 "summary": "Unable to analyze without a valid stock ticker.",
+                "detailed_analysis": "",
                 "details": {},
                 "success": False
             }
@@ -34,11 +36,8 @@ class TickerAnalysisAgent:
         change = price_change.get("change")
         change_percent = price_change.get("change_percent")
         company_name = price.get("company_name", ticker)
-        
-        # Use news even if we don't have price data
-        has_news = bool(news.get("headlines"))
-        has_price = current_price is not None and current_price > 0
-        has_change = change is not None and change_percent is not None
+        from_price = price_change.get("from_price")
+        to_price = price_change.get("to_price")
         
         # Process news for analysis
         headlines = news.get("headlines", [])
@@ -51,46 +50,71 @@ class TickerAnalysisAgent:
                 "sentiment": sentiment
             })
         
-        # Generate an appropriate summary based on available data
-        if "why" in query.lower():
-            summary = self._generate_why_summary(ticker, company_name, timeframe, 
-                                              has_price, current_price,
-                                              has_change, change, change_percent,
-                                              has_news, news_analysis)
-        elif "what's happening" in query.lower() or "what is happening" in query.lower():
-            summary = self._generate_whats_happening_summary(ticker, company_name, timeframe,
-                                                          has_price, current_price,
-                                                          has_change, change, change_percent,
-                                                          has_news, news_analysis)
-        elif "how has" in query.lower():
-            summary = self._generate_how_has_summary(ticker, company_name, timeframe,
-                                                  has_price, current_price,
-                                                  has_change, change, change_percent,
-                                                  has_news, news_analysis)
+        # Add news_analysis to price object for LLM processing
+        enhanced_price = dict(price)
+        enhanced_price["news_analysis"] = {
+            "headlines": [item["headline"] for item in news_analysis[:10]],
+            "sentiments": [item["sentiment"] for item in news_analysis[:10]]
+        }
+        
+        # Try to generate a summary and detailed analysis using the LLM
+        llm_result = generate_analysis_with_llm(ticker, query, enhanced_price, news, price_change)
+        
+        # If LLM analysis is available, use it
+        if llm_result and "summary" in llm_result and "detailed_analysis" in llm_result:
+            summary = llm_result["summary"]
+            detailed_analysis = llm_result["detailed_analysis"]
+            llm_used = True
         else:
-            # Default summary
-            summary = self._generate_default_summary(ticker, company_name, timeframe,
-                                                  has_price, current_price,
-                                                  has_change, change, change_percent,
-                                                  has_news, news_analysis)
+            # Generate an appropriate summary based on available data
+            if "why" in query.lower():
+                summary = self._generate_why_summary(ticker, company_name, timeframe, 
+                                                  current_price is not None, current_price,
+                                                  change is not None, change, change_percent,
+                                                  bool(headlines), news_analysis)
+            elif "what's happening" in query.lower() or "what is happening" in query.lower():
+                summary = self._generate_whats_happening_summary(ticker, company_name, timeframe,
+                                                              current_price is not None, current_price,
+                                                              change is not None, change, change_percent,
+                                                              bool(headlines), news_analysis)
+            else:
+                summary = self._generate_default_summary(ticker, company_name, timeframe,
+                                                      current_price is not None, current_price,
+                                                      change is not None, change, change_percent,
+                                                      bool(headlines), news_analysis)
+            
+            # Generate a basic detailed analysis
+            detailed_analysis = self._generate_detailed_analysis(ticker, company_name, timeframe,
+                                                           current_price, change, change_percent,
+                                                           from_price, to_price,
+                                                           news_analysis)
+            llm_used = False
         
         # Create details with whatever data we have
-        details = {}
-        
-        if has_price or has_change:
-            details["price_analysis"] = {
+        details = {
+            "llm_enhanced": llm_used,
+            "price_analysis": {
                 "timeframe": timeframe
             }
-            
-            if has_price:
-                details["price_analysis"]["current_price"] = current_price
-                
-            if has_change:
-                details["price_analysis"]["change"] = change
-                details["price_analysis"]["change_percent"] = change_percent
-                details["price_analysis"]["direction"] = "up" if change > 0 else "down" if change < 0 else "flat"
+        }
         
-        if has_news:
+        # Add price information to details
+        if current_price is not None:
+            details["price_analysis"]["current_price"] = current_price
+        
+        if change is not None:
+            details["price_analysis"]["change"] = change
+            details["price_analysis"]["change_percent"] = change_percent
+            details["price_analysis"]["direction"] = "up" if change > 0 else "down" if change < 0 else "flat"
+            
+        if from_price is not None:
+            details["price_analysis"]["from_price"] = from_price
+            
+        if to_price is not None:
+            details["price_analysis"]["to_price"] = to_price
+        
+        # Add news analysis to details
+        if headlines:
             details["news_analysis"] = {
                 "headlines": [item["headline"] for item in news_analysis[:5]],
                 "sentiments": [item["sentiment"] for item in news_analysis[:5]],
@@ -99,6 +123,7 @@ class TickerAnalysisAgent:
         
         return {
             "summary": summary,
+            "detailed_analysis": detailed_analysis,
             "details": details,
             "success": True
         }
@@ -169,22 +194,6 @@ class TickerAnalysisAgent:
             
         return summary
     
-    def _generate_how_has_summary(self, ticker, company_name, timeframe, has_price, price,
-                               has_change, change, change_percent, has_news, news_analysis):
-        """Generate summary for 'how has' questions."""
-        if has_change:
-            direction = "increased" if change > 0 else "decreased" if change < 0 else "remained stable"
-            summary = f"{company_name} stock has {direction} by {abs(change_percent):.2f}% ({abs(change):.2f} points) {timeframe}. "
-            
-            if has_news and news_analysis:
-                summary += f"Recent headlines include: {news_analysis[0]['headline']}"
-        elif has_price:
-            summary = f"{company_name} is currently trading at ${price:.2f}, but historical data for {timeframe} is unavailable."
-        else:
-            summary = f"Unable to determine how {company_name} stock has changed {timeframe} due to insufficient data."
-            
-        return summary
-    
     def _generate_default_summary(self, ticker, company_name, timeframe, has_price, price,
                                has_change, change, change_percent, has_news, news_analysis):
         """Generate a default summary when no specific question type is identified."""
@@ -203,3 +212,76 @@ class TickerAnalysisAgent:
             summary += f"Recent news: {news_analysis[0]['headline']}"
         
         return summary
+    
+    def _generate_detailed_analysis(self, ticker, company_name, timeframe, 
+                                  current_price, change, change_percent, from_price, to_price,
+                                  news_analysis):
+        """Generate a detailed analysis for the popup view."""
+        analysis = f"## {company_name} ({ticker}) - Detailed Analysis\n\n"
+        
+        # Price Movement Analysis
+        analysis += "### Price Movement\n"
+        if change is not None and change_percent is not None:
+            direction = "increased" if change > 0 else "decreased" if change < 0 else "remained stable"
+            analysis += f"{company_name} stock has {direction} by ${abs(change):.2f} (${from_price:.2f} to ${to_price:.2f}), "
+            analysis += f"representing a {abs(change_percent):.2f}% change over {timeframe}. "
+            
+            if change > 0:
+                analysis += "This upward movement suggests positive market sentiment toward the company. "
+            elif change < 0:
+                analysis += "This downward movement indicates market concern about the company's prospects. "
+        else:
+            analysis += f"Price movement data for {timeframe} is not available. "
+        
+        # News Impact Analysis
+        analysis += "\n\n### News Impact\n"
+        if news_analysis:
+            # Count positive and negative news
+            positive_news = [item for item in news_analysis if item["sentiment"] == "positive"]
+            negative_news = [item for item in news_analysis if item["sentiment"] == "negative"]
+            neutral_news = [item for item in news_analysis if item["sentiment"] == "neutral"]
+            
+            analysis += f"Recent news coverage includes {len(positive_news)} positive, {len(negative_news)} negative, "
+            analysis += f"and {len(neutral_news)} neutral headlines. "
+            
+            # Highlight key news based on sentiment
+            if change is not None:
+                if change > 0 and positive_news:
+                    analysis += f"The positive price movement correlates with favorable headlines such as: "
+                    analysis += f"\"{positive_news[0]['headline']}\". "
+                elif change < 0 and negative_news:
+                    analysis += f"The negative price movement aligns with concerning headlines such as: "
+                    analysis += f"\"{negative_news[0]['headline']}\". "
+            
+            # Include a few key headlines
+            analysis += "\n\nKey recent headlines:\n"
+            for i, item in enumerate(news_analysis[:3]):
+                analysis += f"- {item['headline']} (Sentiment: {item['sentiment']})\n"
+        else:
+            analysis += "No significant news has been reported recently that might explain the price movement."
+        
+        # Market Context
+        analysis += "\n\n### Market Context\n"
+        analysis += f"To fully understand {ticker}'s performance, it's important to consider the broader market context. "
+        if change is not None:
+            if change > 0:
+                analysis += f"Investors should evaluate whether this gain is company-specific or part of a sector-wide trend. "
+            else:
+                analysis += f"Investors should determine if this decline is unique to {ticker} or reflects industry-wide challenges. "
+        
+        # Outlook
+        analysis += "\n\n### Outlook\n"
+        analysis += f"Based on the current data, {ticker} "
+        if change is not None:
+            if change > 1.5:
+                analysis += "shows strong momentum that may continue if supported by positive fundamentals and market conditions. "
+            elif change > 0:
+                analysis += "shows modest positive movement that warrants cautious optimism. "
+            elif change > -1.5:
+                analysis += "shows minor weakness that may be temporary depending on upcoming news and market trends. "
+            else:
+                analysis += "faces significant downward pressure that could continue unless fundamental factors improve. "
+        else:
+            analysis += "requires more data to make a confident assessment of future price movements. "
+        
+        return analysis

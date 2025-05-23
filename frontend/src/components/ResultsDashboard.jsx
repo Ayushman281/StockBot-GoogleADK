@@ -14,7 +14,7 @@ const ResultsDashboard = ({ results, query }) => {
   const currentPrice = typeof metadata.current_price === 'number' ? metadata.current_price : 0;
   const priceChange = metadata.price_change || { change: 0, change_percent: 0, timeframe: 'today' };
   const news = Array.isArray(metadata.news) ? metadata.news : [];
-  const analysis = metadata.analysis || { summary: "No analysis available", details: {} };
+  const analysis = metadata.analysis || { summary: "No analysis available", detailed_analysis: "", details: {} };
   
   return (
     <div className="mt-6 space-y-6 animate-fadeIn">
@@ -37,7 +37,7 @@ const ResultsDashboard = ({ results, query }) => {
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <PriceChangeSection priceChange={priceChange} />
-            <StockAnalysisCard analysis={analysis} />
+            <StockAnalysisCard analysis={analysis} ticker={ticker} />
           </div>
           
           <div className="mt-8">
