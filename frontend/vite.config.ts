@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 // Add explicit type for Node.js process
 declare const process: {
@@ -15,6 +16,11 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
   server: {
     proxy: {
       // Proxy API requests to backend during development
@@ -26,12 +32,13 @@ export default defineConfig({
     }
   },
   build: {
-    // Ensure proper static asset handling
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    // Fix module loading issues
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      },
       output: {
         manualChunks: undefined,
       }
