@@ -14,8 +14,11 @@ export const queryStockBot = async (text) => {
   try {
     // For development testing without backend, return mock data if needed
     if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_MOCK_DATA === 'true') {
+      console.log('Using mock data for query:', text);
       return getMockResponse(text);
     }
+    
+    console.log('Sending API request to:', `${API_BASE_URL}/query`);
     
     // Make the actual API call to the backend
     const response = await fetch(`${API_BASE_URL}/query`, {
@@ -27,11 +30,25 @@ export const queryStockBot = async (text) => {
     });
     
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`API error: ${response.status} - ${errorData.detail || 'Unknown error'}`);
+      let errorMessage = `API error: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = `API error: ${response.status} - ${errorData.detail || 'Unknown error'}`;
+      } catch (e) {
+        console.error('Failed to parse error response:', e);
+      }
+      throw new Error(errorMessage);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('API response:', data);
+    
+    // Validate basic structure of response
+    if (!data.answer) {
+      console.warn('API response missing answer field:', data);
+    }
+    
+    return data;
   } catch (error) {
     console.error('API request failed:', error);
     throw error;
@@ -134,34 +151,52 @@ const getNewsItems = (ticker, isPositive) => {
     `${ticker} Reports Better-Than-Expected Earnings`,
     `${ticker} Stock Jumps After Analyst Upgrade`,
     `${ticker} Announces New Product Line, Shares Up`,
-    `${getCompanyName(ticker)} Expands into New Markets`
+    `${getCompanyName(ticker)} Expands into New Markets`,
+    `Investors Bullish on ${ticker} Future Growth`,
+    `${ticker} Beats Market Expectations for Q2`,
+    `${getCompanyName(ticker)} CEO Announces Positive Outlook`,
+    `${ticker} Shares Rally on Strong Consumer Demand`,
+    `New Partnership Boosts ${ticker} Stock Value`,
+    `Analysts Raise ${ticker} Price Target After Earnings`
   ];
   
   const negativeNews = [
     `${ticker} Stock Falls After Missing Quarterly Expectations`,
     `Analyst Downgrades ${ticker}, Citing Growth Concerns`,
     `${ticker} Faces Regulatory Challenges, Shares Drop`,
-    `${getCompanyName(ticker)} Announces Restructuring Plan`
+    `${getCompanyName(ticker)} Announces Restructuring Plan`,
+    `${ticker} Revenue Disappoints Investors`,
+    `Market Concerns Weigh on ${ticker} Stock`,
+    `${getCompanyName(ticker)} Cuts Annual Forecast`,
+    `Competition Threatens ${ticker}'s Market Position`,
+    `${ticker} Faces Supply Chain Issues`,
+    `Investors Concerned About ${ticker}'s High Valuation`
   ];
   
   const neutralNews = [
     `${ticker} Announces New CEO Appointment`,
     `${getCompanyName(ticker)} to Present at Upcoming Investor Conference`,
     `${ticker} Releases Sustainability Report`,
-    `What Investors Should Know About ${ticker}'s Strategy`
+    `What Investors Should Know About ${ticker}'s Strategy`,
+    `${ticker} Launches New Website`,
+    `${getCompanyName(ticker)} Updates Corporate Governance`,
+    `Industry Expert Discusses ${ticker}'s Position`,
+    `${ticker} Board Approves Share Repurchase Program`,
+    `${getCompanyName(ticker)} Schedules Annual Shareholder Meeting`,
+    `${ticker} Updates Product Roadmap for Coming Year`
   ];
   
   // Mix of news with bias toward sentiment
   let news = [];
   
   if (isPositive) {
-    news = [...positiveNews.slice(0, 2), neutralNews[0], positiveNews[2]];
+    news = [...positiveNews.slice(0, 6), neutralNews[0], neutralNews[1], positiveNews[6], positiveNews[7]];
   } else {
-    news = [...negativeNews.slice(0, 2), neutralNews[1], negativeNews[2]];
+    news = [...negativeNews.slice(0, 6), neutralNews[2], neutralNews[3], negativeNews[6], negativeNews[7]];
   }
   
-  // Shuffle array
-  return news.sort(() => Math.random() - 0.5).slice(0, 3);
+  // Shuffle array - but don't slice, return all news for pagination testing
+  return news.sort(() => Math.random() - 0.5);
 };
 
 /**

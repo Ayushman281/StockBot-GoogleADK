@@ -17,11 +17,31 @@ function App() {
     
     try {
       const data = await queryStockBot(searchQuery);
-      setResults(data);
       console.log('Received data from API:', data); // For debugging
+      
+      // Basic validation of response data structure
+      if (!data || typeof data !== 'object') {
+        throw new Error("Invalid response format from server");
+      }
+      
+      // Ensure minimum required structure exists to prevent rendering errors
+      const safeData = {
+        answer: data.answer || "No answer provided",
+        metadata: {
+          ticker: data.metadata?.ticker || "UNKNOWN",
+          company_name: data.metadata?.company_name || "Unknown Company",
+          current_price: data.metadata?.current_price || 0,
+          price_change: data.metadata?.price_change || { change: 0, change_percent: 0, timeframe: 'today' },
+          news: Array.isArray(data.metadata?.news) ? data.metadata.news : [],
+          analysis: data.metadata?.analysis || { summary: "No analysis available", details: {} }
+        }
+      };
+      
+      setResults(safeData);
     } catch (err) {
       console.error('Search error:', err);
       setError(err.message || 'Sorry, we encountered an error processing your request. Please try again.');
+      setResults(null);
     } finally {
       setIsLoading(false);
     }
@@ -31,13 +51,25 @@ function App() {
     setQuery(exampleQuery);
     handleSearch(exampleQuery);
   };
+  
+  const handleReset = () => {
+    setResults(null);
+    setQuery('');
+    setError(null);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-[#1E40AF] text-white p-4 shadow-md">
         <div className="container mx-auto flex items-center">
-          <h1 className="text-2xl font-bold">StockBot</h1>
-          <span className="ml-2 text-sm bg-blue-700 px-2 py-1 rounded-full">Beta</span>
+          <button 
+            onClick={handleReset} 
+            className="flex items-center focus:outline-none hover:opacity-80 transition-opacity"
+            aria-label="Reset StockBot"
+          >
+            <h1 className="text-2xl font-bold">StockBot</h1>
+            <span className="ml-2 text-sm bg-blue-700 px-2 py-1 rounded-full">Beta</span>
+          </button>
         </div>
       </header>
       

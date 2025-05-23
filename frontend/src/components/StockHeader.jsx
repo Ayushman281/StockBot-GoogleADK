@@ -3,12 +3,15 @@ import { TrendingUp } from 'lucide-react';
 
 const StockHeader = ({ ticker, companyName, currentPrice }) => {
   const formatPrice = (price) => {
+    // Ensure price is a number
+    const validPrice = typeof price === 'number' && !isNaN(price) ? price : 0;
+    
     return new Intl.NumberFormat('en-US', { 
       style: 'currency', 
       currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(price);
+    }).format(validPrice);
   };
 
   return (

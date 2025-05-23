@@ -27,20 +27,55 @@ class IdentifyTickerAgent:
         self.ticker_pattern = re.compile(r'[$]?([A-Z]{1,5})\b')
         self.skip_words = {"why", "how", "what", "when", "the", "a", "an", "is", "are", "was", "were", "in", "on", "at", "to", "for", "with", "by", "about", "of"}
         self.stock_keywords = {"stock", "shares", "share", "price"}
-        # Add common company mappings as a fallback
-        # self.common_companies = {
-        #     "tesla": "TSLA",
-        #     "apple": "AAPL",
-        #     "microsoft": "MSFT",
-        #     "amazon": "AMZN",
-        #     "google": "GOOGL",
-        #     "alphabet": "GOOGL",
-        #     "facebook": "META",
-        #     "meta": "META",
-        #     "netflix": "NFLX",
-        #     "nvidia": "NVDA",
-        #     "palantir": "PLTR"
-        # }
+        self.common_companies = {
+            'apple': 'AAPL',
+            'tesla': 'TSLA',
+            'microsoft': 'MSFT',
+            'amazon': 'AMZN',
+            'google': 'GOOGL',
+            'alphabet': 'GOOGL',
+            'meta': 'META',
+            'facebook': 'META',
+            'netflix': 'NFLX',
+            'nvidia': 'NVDA',
+            'amd': 'AMD',
+            'intel': 'INTC',
+            'ibm': 'IBM',
+            'oracle': 'ORCL',
+            'cisco': 'CSCO',
+            'walmart': 'WMT',
+            'disney': 'DIS',
+            'coca-cola': 'KO',
+            'coke': 'KO',
+            'pepsi': 'PEP',
+            'nike': 'NKE',
+            'mcdonalds': 'MCD',
+            'starbucks': 'SBUX',
+            'boeing': 'BA'
+        }
+        self.company_names = {
+            'AAPL': 'Apple Inc.',
+            'TSLA': 'Tesla, Inc.',
+            'MSFT': 'Microsoft Corporation',
+            'AMZN': 'Amazon.com, Inc.',
+            'GOOGL': 'Alphabet Inc.',
+            'META': 'Meta Platforms, Inc.',
+            'NFLX': 'Netflix, Inc.',
+            'NVDA': 'NVIDIA Corporation',
+            'AMD': 'Advanced Micro Devices, Inc.',
+            'INTC': 'Intel Corporation',
+            'IBM': 'International Business Machines',
+            'ORCL': 'Oracle Corporation',
+            'CSCO': 'Cisco Systems, Inc.',
+            'WMT': 'Walmart Inc.',
+            'DIS': 'The Walt Disney Company',
+            'KO': 'The Coca-Cola Company',
+            'PEP': 'PepsiCo, Inc.',
+            'NKE': 'Nike, Inc.',
+            'MCD': "McDonald's Corporation",
+            'SBUX': 'Starbucks Corporation',
+            'BA': 'The Boeing Company'
+        }
         
     def get_ticker_from_api(self, company_name):
         """Fetch ticker using the Financial Modeling Prep search endpoint."""
@@ -69,6 +104,93 @@ class IdentifyTickerAgent:
             logger.error(f"Exception in API call: {str(e)}")
             
         return None, None
+
+    def _extract_timeframe(self, query_text):
+        """
+        Extract timeframe from query text.
+        
+        Args:
+            query_text (str): The user's query text
+            
+        Returns:
+            str: The identified timeframe ('today', 'week', 'month', etc.)
+        """
+        query_lower = query_text.lower()
+        
+        # Check for explicit timeframe mentions
+        if 'today' in query_lower:
+            return 'today'
+        elif 'yesterday' in query_lower:
+            return 'yesterday'
+        elif any(term in query_lower for term in ['this week', 'current week']):
+            return 'week'
+        elif any(term in query_lower for term in ['this month', 'current month']):
+            return 'month'
+        elif any(term in query_lower for term in ['this year', 'current year']):
+            return 'year'
+        elif 'quarter' in query_lower:
+            return 'quarter'
+        
+        # Check for "last X days/weeks/months" patterns
+        day_pattern = re.search(r'last\s+(\d+)\s+day', query_lower)
+        if day_pattern:
+            days = int(day_pattern.group(1))
+            if days <= 1:
+                return 'today'
+            elif days <= 7:
+                return 'week'
+            elif days <= 30:
+                return 'month'
+            elif days <= 90:
+                return 'quarter'
+            else:
+                return 'year'
+        
+        # Check for specific number of days/weeks/months
+        if re.search(r'(\d+)\s+day', query_lower):
+            days_match = re.search(r'(\d+)\s+day', query_lower)
+            days = int(days_match.group(1))
+            if days <= 1:
+                return 'today'
+            elif days <= 7:
+                return 'week'
+            elif days <= 30:
+                return 'month'
+            else:
+                return 'quarter'
+        
+        # Check for week(s) pattern
+        if 'week' in query_lower:
+            weeks_match = re.search(r'(\d+)\s+week', query_lower)
+            if weeks_match:
+                weeks = int(weeks_match.group(1))
+                if weeks <= 1:
+                    return 'week'
+                elif weeks <= 4:
+                    return 'month'
+                else:
+                    return 'quarter'
+            return 'week'  # Default if just "week" is mentioned
+        
+        # Check for month(s) pattern
+        if 'month' in query_lower:
+            months_match = re.search(r'(\d+)\s+month', query_lower)
+            if months_match:
+                months = int(months_match.group(1))
+                if months <= 1:
+                    return 'month'
+                elif months <= 3:
+                    return 'quarter'
+                else:
+                    return 'year'
+            return 'month'  # Default if just "month" is mentioned
+        
+        # Check for year pattern
+        if 'year' in query_lower:
+            return 'year'
+        
+        # Default to today if no timeframe mentioned
+        return 'today'
 
     def identify(self, query):
         """
@@ -104,7 +226,7 @@ class IdentifyTickerAgent:
                     response = requests.get(url, timeout=10)
                     if response.status_code == 200 and response.json():
                         company_data = response.json()[0]
-                        timeframe = extract_timeframe(query_lower)
+                        timeframe = self._extract_timeframe(query_lower)
                         logger.info(f"Found ticker via direct mention: {ticker}")
                         return {
                             "ticker": ticker,
@@ -124,7 +246,7 @@ class IdentifyTickerAgent:
         # Check for common company names directly in the query
         for company, ticker in self.common_companies.items():
             if company in query_lower:
-                timeframe = extract_timeframe(query_lower)
+                timeframe = self._extract_timeframe(query_lower)
                 logger.info(f"Found ticker via common company match: {ticker}")
                 return {
                     "ticker": ticker, 
@@ -149,7 +271,7 @@ class IdentifyTickerAgent:
                 ticker, full_name = self.get_ticker_from_api(phrase)
                 
                 if ticker:
-                    timeframe = extract_timeframe(query_lower)
+                    timeframe = self._extract_timeframe(query_lower)
                     logger.info(f"Found ticker via API phrase search: {ticker}")
                     return {
                         "ticker": ticker,
@@ -162,7 +284,7 @@ class IdentifyTickerAgent:
         clean_query = ' '.join([t for t in tokens if t not in self.stock_keywords])
         ticker, full_name = self.get_ticker_from_api(clean_query)
         if ticker:
-            timeframe = extract_timeframe(query_lower)
+            timeframe = self._extract_timeframe(query_lower)
             logger.info(f"Found ticker via whole query fallback: {ticker}")
             return {
                 "ticker": ticker,

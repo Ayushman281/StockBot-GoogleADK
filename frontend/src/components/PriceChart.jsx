@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 const generateChartData = (ticker, timeframe) => {
   const dataPoints = timeframe === 'today' ? 24 : 
@@ -27,6 +28,7 @@ const PriceChart = ({ ticker, timeframe }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState(timeframe || 'today');
   const [isLoading, setIsLoading] = useState(true);
   const [hoverPoint, setHoverPoint] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const timeframes = [
     { id: 'today', label: '1D' },
@@ -114,36 +116,153 @@ const PriceChart = ({ ticker, timeframe }) => {
     }
     return value.toFixed(2);
   };
+  
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   return (
-    <div className="h-full">
+    <div className="relative">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-medium text-gray-900">Price Chart</h3>
         
-        <div className="flex space-x-1">
-          {timeframes.map(tf => (
-            <button
-              key={tf.id}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors
-                ${selectedTimeframe === tf.id 
-                  ? 'bg-[#1E40AF] text-white' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              onClick={() => setSelectedTimeframe(tf.id)}
-            >
-              {tf.label}
-            </button>
-          ))}
+        <div className="flex space-x-1 items-center">
+          <div className="flex space-x-1">
+            {timeframes.map(tf => (
+              <button
+                key={tf.id}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors
+                  ${selectedTimeframe === tf.id 
+                    ? 'bg-[#1E40AF] text-white' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                onClick={() => setSelectedTimeframe(tf.id)}
+              >
+                {tf.label}
+              </button>
+            ))}
+          </div>
+          
+          <button 
+            onClick={toggleExpand}
+            className="ml-2 p-1 rounded-full hover:bg-gray-100"
+            aria-label={isExpanded ? "Minimize chart" : "Expand chart"}
+            title={isExpanded ? "Minimize chart" : "Expand chart"}
+          >
+            {isExpanded ? 
+              <Minimize2 className="w-4 h-4 text-gray-600" /> : 
+              <Maximize2 className="w-4 h-4 text-gray-600" />
+            }
+          </button>
         </div>
       </div>
       
-      <div className="bg-white rounded-lg border border-gray-200 p-4 h-[300px] flex items-center justify-center">
+      {isExpanded && (
+        <div className="fixed inset-0 z-50 bg-white p-6 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-medium text-gray-900">Price Chart (Expanded)</h3>
+            <button
+              onClick={toggleExpand}
+              className="p-2 rounded-md hover:bg-gray-100"
+              aria-label="Close expanded view"
+            >
+              <Minimize2 className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+          <div className="flex-grow bg-white border border-gray-200 rounded-lg p-4">
+            {isLoading ? (
+              <div className="animate-pulse flex flex-col items-center">
+                <div className="h-4 w-32 bg-gray-200 rounded mb-3"></div>
+                <div className="h-[400px] w-full bg-gray-100 rounded"></div>
+              </div>
+            ) : (
+              <div className="w-full h-full">
+                <svg 
+                  width="100%" 
+                  height="100%" 
+                  viewBox={`-25 -10 ${chartWidth + 45} ${chartHeight + 30}`} 
+                  preserveAspectRatio="none"
+                  onMouseMove={handleMouseMove}
+                  onMouseLeave={handleMouseLeave}
+                  className="cursor-crosshair"
+                >
+                  {[...Array(5)].map((_, i) => (
+                    <line
+                      key={`grid-${i}`}
+                      x1="0"
+                      y1={i * (chartHeight / 4)}
+                      x2={chartWidth}
+                      y2={i * (chartHeight / 4)}
+                      stroke="#f0f0f0"
+                      strokeWidth="0.5"
+                    />
+                  ))}
+                  
+                  <path
+                    d={generatePath()}
+                    fill={fillColor}
+                    strokeWidth="0"
+                  />
+                  
+                  <path
+                    d={generatePath()}
+                    fill="none"
+                    stroke={chartColor}
+                    strokeWidth="1.5"
+                  />
+
+                  {hoverPoint && (
+                    <>
+                      <line
+                        x1={hoverPoint.x}
+                        y1="0"
+                        x2={hoverPoint.x}
+                        y2={chartHeight}
+                        stroke="#94A3B8"
+                        strokeWidth="0.5"
+                        strokeDasharray="2,2"
+                      />
+                      <circle
+                        cx={hoverPoint.x}
+                        cy={hoverPoint.y}
+                        r="3"
+                        fill={chartColor}
+                        stroke="white"
+                        strokeWidth="1.5"
+                      />
+                      <rect
+                        x={hoverPoint.x - 40}
+                        y={hoverPoint.y - 25}
+                        width="80"
+                        height="20"
+                        rx="4"
+                        fill="rgba(0, 0, 0, 0.75)"
+                      />
+                      <text
+                        x={hoverPoint.x}
+                        y={hoverPoint.y - 12}
+                        textAnchor="middle"
+                        fill="white"
+                        fontSize="8"
+                      >
+                        ${hoverPoint.value} • {hoverPoint.time}
+                      </text>
+                    </>
+                  )}
+                </svg>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <div className="bg-white rounded-lg border border-gray-200 p-4" style={{ height: '220px' }}>
         {isLoading ? (
           <div className="animate-pulse flex flex-col items-center">
             <div className="h-4 w-32 bg-gray-200 rounded mb-3"></div>
-            <div className="h-[200px] w-full bg-gray-100 rounded"></div>
+            <div className="h-[180px] w-full bg-gray-100 rounded"></div>
           </div>
         ) : (
-          <div className="w-full h-full relative">
+          <div className="w-full h-full">
             <svg 
               width="100%" 
               height="100%" 
@@ -153,7 +272,6 @@ const PriceChart = ({ ticker, timeframe }) => {
               onMouseLeave={handleMouseLeave}
               className="cursor-crosshair"
             >
-              {/* Grid lines */}
               {[...Array(5)].map((_, i) => (
                 <line
                   key={`grid-${i}`}
@@ -166,14 +284,12 @@ const PriceChart = ({ ticker, timeframe }) => {
                 />
               ))}
               
-              {/* Area fill */}
               <path
                 d={generatePath()}
                 fill={fillColor}
                 strokeWidth="0"
               />
               
-              {/* Chart line */}
               <path
                 d={generatePath()}
                 fill="none"
@@ -181,7 +297,6 @@ const PriceChart = ({ ticker, timeframe }) => {
                 strokeWidth="1.5"
               />
 
-              {/* Hover indicator */}
               {hoverPoint && (
                 <>
                   <line
@@ -220,43 +335,6 @@ const PriceChart = ({ ticker, timeframe }) => {
                   </text>
                 </>
               )}
-              
-              {/* Time labels */}
-              {chartData.map((_, i) => {
-                if (i % Math.floor(chartData.length / 5) === 0) {
-                  return (
-                    <text
-                      key={`time-${i}`}
-                      x={(i / (chartData.length - 1)) * chartWidth}
-                      y={chartHeight + 15}
-                      textAnchor="middle"
-                      fill="#64748B"
-                      fontSize="8"
-                    >
-                      {formatTimeLabel(i, 5)}
-                    </text>
-                  );
-                }
-                return null;
-              })}
-              
-              {/* Price labels */}
-              {[...Array(5)].map((_, i) => {
-                const value = minValue + (valueRange * (i / 4));
-                return (
-                  <text
-                    key={`price-${i}`}
-                    x="-15"
-                    y={chartHeight - (i * (chartHeight / 4))}
-                    textAnchor="end"
-                    fill="#64748B"
-                    fontSize="8"
-                    dy="3"
-                  >
-                    ${formatPrice(value)}
-                  </text>
-                );
-              })}
             </svg>
           </div>
         )}

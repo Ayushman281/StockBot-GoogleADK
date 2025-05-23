@@ -5,7 +5,7 @@ const ExampleQueries = ({ onExampleClick }) => {
     "Why did Tesla stock drop today?",
     "How has Apple performed this week?",
     "What's happening with Microsoft stock?",
-    "Compare NVIDIA and AMD performance"
+    "How is Amazon doing this month?",
   ];
 
   return (

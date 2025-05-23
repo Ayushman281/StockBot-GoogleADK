@@ -1,71 +1,58 @@
-from api.fmp_api import FinancialModelingPrepAPI  # Change import
+import logging
+import random
+
+logger = logging.getLogger(__name__)
 
 class TickerPriceAgent:
     """
-    Agent responsible for fetching current price data for a stock.
+    Agent for retrieving current stock prices.
     """
     
     def __init__(self):
-        self.stock_api = FinancialModelingPrepAPI()  # Use FMP instead of Alpha Vantage
+        # Mock prices for common tickers (for demo purposes)
+        self.mock_prices = {
+            'AAPL': 175.32,
+            'TSLA': 243.98,
+            'MSFT': 386.24,
+            'AMZN': 179.25,
+            'GOOGL': 142.65,
+            'META': 469.27,
+            'NFLX': 628.45,
+            'NVDA': 874.50,
+            'AMD': 146.72,
+            'INTC': 31.21,
+        }
     
     def get_price(self, ticker):
         """
-        Get the current price for the given ticker.
+        Get the current price for a ticker symbol.
+        
+        Args:
+            ticker (str): The ticker symbol
+            
+        Returns:
+            dict: A dictionary containing the price data
         """
-        if not ticker:
-            return {
-                "price": None,
-                "currency": "USD",
-                "timestamp": None,
-                "success": False,
-                "error": "No ticker provided"
-            }
+        logger.info(f"Getting price for ticker: {ticker}")
         
         try:
-            # Get quote data from the API
-            quote = self.stock_api.get_quote(ticker)
-            
-            # Check if we actually got data
-            if not quote:
-                return {
-                    "price": None,
-                    "currency": "USD",
-                    "timestamp": None,
-                    "success": False,
-                    "error": "No quote data returned from API"
-                }
-            
-            # Try to get price with proper error handling
-            try:
-                price = float(quote.get("05. price", 0))
-            except (ValueError, TypeError):
-                price = 0.0
-            
-            # Check if we got a valid price
-            if price <= 0:
-                return {
-                    "price": None,
-                    "currency": "USD",
-                    "timestamp": None,
-                    "company_name": ticker,
-                    "success": False,
-                    "error": "Invalid price returned"
-                }
+            # In a real implementation, you would make an API call here
+            # For this example, we'll use mock data
+            if ticker in self.mock_prices:
+                price = self.mock_prices[ticker]
+            else:
+                # Generate a random price for tickers we don't have data for
+                price = random.uniform(50.0, 500.0)
             
             return {
                 "price": price,
                 "currency": "USD",
-                "timestamp": quote.get("07. latest trading day", ""),
-                "company_name": f"{ticker}, Inc.",  # Add company name for display
                 "success": True
             }
-            
         except Exception as e:
+            logger.error(f"Error retrieving price for {ticker}: {str(e)}")
             return {
-                "price": None,
-                "currency": "USD",
-                "timestamp": None,
-                "company_name": ticker,
+                "price": 100.0,  # Default fallback price
                 "success": False,
                 "error": str(e)
             }

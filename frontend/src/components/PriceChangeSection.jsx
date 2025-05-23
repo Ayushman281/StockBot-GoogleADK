@@ -2,7 +2,8 @@ import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 const PriceChangeSection = ({ priceChange }) => {
-  const { change, change_percent, timeframe } = priceChange;
+  // Safeguard against undefined priceChange props with default values
+  const { change = 0, change_percent = 0, timeframe = 'today' } = priceChange || {};
   
   const isPositive = change >= 0;
   const changeColor = isPositive ? 'text-[#22C55E]' : 'text-[#EF4444]';
@@ -21,6 +22,9 @@ const PriceChangeSection = ({ priceChange }) => {
   };
 
   const formatTimeframe = (tf) => {
+    // Add null check to prevent errors on undefined timeframe
+    if (!tf) return 'Today';
+    
     switch(tf) {
       case 'today':
         return 'Today';

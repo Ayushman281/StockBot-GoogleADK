@@ -1,5 +1,5 @@
-import React from 'react';
-import { ChevronRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronRight, TrendingUp, TrendingDown, Minus, ChevronDown } from 'lucide-react';
 
 // Mock function to determine sentiment
 const getSentiment = (newsTitle) => {
@@ -52,16 +52,41 @@ const NewsItem = ({ title }) => {
   );
 };
 
-const NewsSection = ({ news }) => {
+const NewsSection = ({ news = [] }) => {
+  const [displayCount, setDisplayCount] = useState(3);
+  
+  // Initial display count is 3, then add 5 more each time
+  const initialCount = 3;
+  const incrementCount = 5;
+  
+  // Calculate displayed news items
+  const displayedNews = news.slice(0, displayCount);
+  const hasMore = displayCount < news.length;
+  
+  const handleShowMore = () => {
+    // Increase display count by 5, but don't exceed total news length
+    setDisplayCount(Math.min(displayCount + incrementCount, news.length));
+  };
+
   return (
     <div>
       <h3 className="font-medium text-gray-900 mb-4">Related News</h3>
       
-      {news && news.length > 0 ? (
+      {displayedNews && displayedNews.length > 0 ? (
         <div>
-          {news.map((item, index) => (
+          {displayedNews.map((item, index) => (
             <NewsItem key={index} title={item} />
           ))}
+          
+          {hasMore && (
+            <button
+              onClick={handleShowMore}
+              className="w-full py-2 px-3 flex items-center justify-center text-sm text-[#1E40AF] font-medium border border-dashed border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <span>Show more news</span>
+              <ChevronDown className="h-4 w-4 ml-1" />
+            </button>
+          )}
         </div>
       ) : (
         <div className="text-center py-6 text-gray-500">
