@@ -2,8 +2,8 @@
  * API service for StockBot
  */
 
-// Base URL for API requests
-const API_BASE_URL = 'https://api.stockbot.example'; // Replace with actual API URL
+// Base URL for API requests - point to the actual backend server
+const API_BASE_URL = 'http://localhost:8000'; // FastAPI backend URL
 
 /**
  * Query the StockBot API with a natural language question
@@ -12,13 +12,13 @@ const API_BASE_URL = 'https://api.stockbot.example'; // Replace with actual API 
  */
 export const queryStockBot = async (text) => {
   try {
-    // For development, return mock data
-    if (process.env.NODE_ENV === 'development') {
+    // For development testing without backend, return mock data if needed
+    if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_MOCK_DATA === 'true') {
       return getMockResponse(text);
     }
     
-    // In production, make the actual API call
-    const response = await fetch(`${API_BASE_URL}/api/query`, {
+    // Make the actual API call to the backend
+    const response = await fetch(`${API_BASE_URL}/query`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -27,7 +27,8 @@ export const queryStockBot = async (text) => {
     });
     
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`API error: ${response.status} - ${errorData.detail || 'Unknown error'}`);
     }
     
     return await response.json();

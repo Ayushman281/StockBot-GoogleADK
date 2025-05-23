@@ -18,9 +18,10 @@ function App() {
     try {
       const data = await queryStockBot(searchQuery);
       setResults(data);
+      console.log('Received data from API:', data); // For debugging
     } catch (err) {
-      setError('Sorry, we encountered an error processing your request. Please try again.');
       console.error('Search error:', err);
+      setError(err.message || 'Sorry, we encountered an error processing your request. Please try again.');
     } finally {
       setIsLoading(false);
     }
