@@ -43,88 +43,105 @@ const AnalysisModal = ({ isOpen, onClose, analysis, ticker }) => {
 
   if (!isOpen) return null;
 
-  // Function to format text with proper heading styling
+  // Function to safely format text with enhanced heading styling
   const formatText = (text) => {
-    if (!text) return null;
-    
-    const sections = [];
-    const lines = text.split('\n');
-    let currentSection = [];
-    
-    lines.forEach((line, index) => {
-      // Check if line is a heading
-      if (line.startsWith('##')) {
-        // Push previous section if it exists
-        if (currentSection.length > 0) {
-          sections.push(currentSection.join('\n'));
-          currentSection = [];
-        }
-        
-        // Add heading
-        currentSection.push(line);
-      } else {
-        // Add to current section
-        currentSection.push(line);
-      }
-    });
-    
-    // Add final section
-    if (currentSection.length > 0) {
-      sections.push(currentSection.join('\n'));
+    // Make sure text is a string
+    if (!text || typeof text !== 'string' || text.trim() === '') {
+      return <p className="text-gray-500">No detailed analysis available.</p>;
     }
     
-    return sections.map((section, i) => {
-      const sectionLines = section.split('\n');
-      const firstLine = sectionLines[0];
+    try {
+      // Split by new lines and create paragraphs
+      const sections = [];
+      const lines = text.split('\n');
+      let currentSection = [];
       
-      // Main heading (h2)
-      if (firstLine.startsWith('## ')) {
-        return (
-          <div key={i} className="mb-4">
-            <h2 className="text-xl font-bold border-b border-gray-300 pb-1 mb-3">
-              {firstLine.replace(/^## /, '')}
-            </h2>
-            <div className="font-normal">
-              {sectionLines.slice(1).filter(l => l.trim() !== '').map((line, j) => (
-                <p key={j} className="mb-2">
-                  {line}
+      lines.forEach((line, index) => {
+        // Check if line is a heading
+        if (line.startsWith('##')) {
+          // Push previous section if it exists
+          if (currentSection.length > 0) {
+            sections.push(currentSection.join('\n'));
+            currentSection = [];
+          }
+          
+          // Add heading
+          currentSection.push(line);
+        } else {
+          // Add to current section
+          currentSection.push(line);
+        }
+      });
+      
+      // Add final section
+      if (currentSection.length > 0) {
+        sections.push(currentSection.join('\n'));
+      }
+      
+      return sections.map((section, i) => {
+        const sectionLines = section.split('\n');
+        const firstLine = sectionLines[0];
+        
+        // Main heading (h2)
+        if (firstLine.startsWith('## ')) {
+          return (
+            <div key={i} className="mb-4">
+              <h2 className="text-xl font-bold border-b border-gray-300 pb-1 mb-3">
+                {firstLine.replace(/^## /, '')}
+              </h2>
+              <div className="font-normal">
+                {sectionLines.slice(1).filter(l => l.trim() !== '').map((line, j) => (
+                  <p key={j} className="mb-2">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          );
+        } 
+        // Subheading (h3)
+        else if (firstLine.startsWith('### ')) {
+          return (
+            <div key={i} className="mb-4">
+              <h3 className="text-lg font-bold border-b border-gray-200 pb-1 mb-2">
+                {firstLine.replace(/^### /, '')}
+              </h3>
+              <div className="font-normal">
+                {sectionLines.slice(1).filter(l => l.trim() !== '').map((line, j) => (
+                  <p key={j} className="mb-2">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        // Regular paragraph or content without heading
+        else {
+          return (
+            <div key={i} className="mb-4 font-normal">
+              {sectionLines.map((line, j) => (
+                <p key={j} className={line.startsWith('- ') ? "mb-1 ml-4 flex" : "mb-2"}>
+                  {line.startsWith('- ') && <span className="mr-2">•</span>}
+                  <span>{line.startsWith('- ') ? line.replace(/^- /, '') : line}</span>
                 </p>
               ))}
             </div>
-          </div>
-        );
-      } 
-      // Subheading (h3)
-      else if (firstLine.startsWith('### ')) {
-        return (
-          <div key={i} className="mb-4">
-            <h3 className="text-lg font-bold border-b border-gray-200 pb-1 mb-2">
-              {firstLine.replace(/^### /, '')}
-            </h3>
-            <div className="font-normal">
-              {sectionLines.slice(1).filter(l => l.trim() !== '').map((line, j) => (
-                <p key={j} className="mb-2">
-                  {line}
-                </p>
-              ))}
-            </div>
-          </div>
-        );
-      }
-      // Regular paragraph or content without heading
-      else {
-        return (
-          <div key={i} className="mb-4 font-normal">
-            {sectionLines.map((line, j) => (
-              <p key={j} className={line.startsWith('- ') ? "mb-1 ml-4 flex" : "mb-2"}>
-                {line.startsWith('- ') && <span className="mr-2">•</span>}
-                <span>{line.startsWith('- ') ? line.replace(/^- /, '') : line}</span>
-              </p>
-            ))}
-          </div>
-        );
-      }
-    });
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error formatting analysis text:", error);
+      
+      // Fallback to simple formatting if error occurs
+      return (
+        <div className="text-gray-800">
+          {typeof text === 'string' ? text.split('\n').map((line, i) => (
+            <p key={i} className="mb-2">{line}</p>
+          )) : <p>Unable to display analysis.</p>}
+        </div>
+      );
+    }
   };
 
   return (
@@ -147,15 +164,7 @@ const AnalysisModal = ({ isOpen, onClose, analysis, ticker }) => {
         </div>
         
         <div className="p-6 overflow-y-auto">
-          {analysis ? (
-            <div className="max-w-none text-gray-800 leading-relaxed">
-              {formatText(analysis)}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>No detailed analysis available for this stock.</p>
-            </div>
-          )}
+          {formatText(analysis)}
         </div>
         
         <div className="border-t p-4 flex justify-end">
