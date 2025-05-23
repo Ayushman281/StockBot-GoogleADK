@@ -2,7 +2,7 @@
  * API service for StockBot
  */
 
-// Base URL for API requests - point to the deployed backend server
+// Base URL for API requests - use environment variable
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 /**

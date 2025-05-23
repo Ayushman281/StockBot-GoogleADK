@@ -7,6 +7,8 @@ declare const process: {
   env: {
     NODE_ENV?: string;
     REACT_APP_USE_MOCK_DATA?: string;
+    VITE_API_BASE_URL?: string;
+    VITE_USE_MOCK_DATA?: string;
   }
 };
 
@@ -33,22 +35,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
-    sourcemap: false,
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
-      output: {
-        manualChunks: undefined,
-      }
-    }
+    assetsDir: 'assets'
   },
   define: {
     // Define environment variables to be used in the app
-    'process.env': {
-      NODE_ENV: JSON.stringify(process.env.NODE_ENV),
-      REACT_APP_USE_MOCK_DATA: JSON.stringify(process.env.REACT_APP_USE_MOCK_DATA || 'false')
-    }
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL),
+    'import.meta.env.VITE_USE_MOCK_DATA': JSON.stringify(process.env.VITE_USE_MOCK_DATA || 'false')
   }
 });
