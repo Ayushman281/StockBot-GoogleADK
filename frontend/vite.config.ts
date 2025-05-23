@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Add explicit type for the Node.js process
+// Add explicit type for Node.js process
 declare const process: {
   env: {
     NODE_ENV?: string;
@@ -22,6 +22,18 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
+  },
+  build: {
+    // Ensure proper static asset handling
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    // Fix module loading issues
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
       }
     }
   },

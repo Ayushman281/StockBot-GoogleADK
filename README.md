@@ -2,6 +2,10 @@
 
 A multi-agent system built with Google ADK for answering stock-related questions using real-time data and news.
 
+# Live Demo
+
+The application is deployed and accessible at: https://stock-bot-google-adk.vercel.app/
+
 ## Project Overview
 
 This system uses a modular multi-agent architecture to process natural language queries about stocks. It fetches real-time stock data and news to provide insightful answers about stock performance and market trends.

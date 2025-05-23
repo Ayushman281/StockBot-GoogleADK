@@ -11,8 +11,8 @@ load_dotenv()
 
 app = FastAPI(title="StockBot API", description="Multi-agent stock analysis system")
 
-# Get frontend URL from environment or use your Vercel URL
-frontend_url = os.environ.get("FRONTEND_URL", "https://stockbot-googleadk.vercel.app")
+# Get frontend URL from environment or use the deployed Vercel URL
+frontend_url = os.environ.get("FRONTEND_URL", "https://stock-bot-google-adk.vercel.app")
 allowed_origins = [frontend_url]
 
 # For development, also allow localhost origins
@@ -22,7 +22,7 @@ if os.environ.get("ENVIRONMENT") != "production":
 # Add CORS middleware to allow requests from frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,  # Accepts requests from deployed frontend and local dev
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
