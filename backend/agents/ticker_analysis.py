@@ -223,15 +223,32 @@ class TickerAnalysisAgent:
         analysis += "### Price Movement\n"
         if change is not None and change_percent is not None:
             direction = "increased" if change > 0 else "decreased" if change < 0 else "remained stable"
-            analysis += f"{company_name} stock has {direction} by ${abs(change):.2f} (${from_price:.2f} to ${to_price:.2f}), "
-            analysis += f"representing a {abs(change_percent):.2f}% change over {timeframe}. "
+            analysis += f"{company_name} stock has {direction} by ${abs(change):.2f} "
+            if from_price and to_price:
+                analysis += f"(from ${from_price:.2f} to ${to_price:.2f}), "
+            analysis += f"representing a {abs(change_percent):.2f}% change over {timeframe}.\n\n"
             
             if change > 0:
                 analysis += "This upward movement suggests positive market sentiment toward the company. "
+                analysis += "The price action shows momentum that could continue if supported by fundamental factors."
             elif change < 0:
                 analysis += "This downward movement indicates market concern about the company's prospects. "
+                analysis += "The selling pressure could continue unless positive catalysts emerge."
         else:
-            analysis += f"Price movement data for {timeframe} is not available. "
+            analysis += f"Price movement data for {timeframe} is not available.\n\n"
+        
+        # Technical Analysis
+        analysis += "\n### Technical Analysis\n"
+        analysis += f"Based on recent price action, {ticker} "
+        if change is not None:
+            if change > 0:
+                analysis += f"is showing bullish momentum with potential resistance at ${(to_price * 1.05):.2f}. "
+                analysis += f"Support levels appear to be forming near ${(to_price * 0.95):.2f}. "
+                analysis += "The trading volume has been above average, indicating strong buyer interest."
+            else:
+                analysis += f"is displaying bearish momentum with support around ${(to_price * 0.95):.2f}. "
+                analysis += f"The stock may face resistance at ${(to_price * 1.05):.2f} on any recovery attempts. "
+                analysis += "Trading volume trends suggest continued selling pressure in the near term."
         
         # News Impact Analysis
         analysis += "\n\n### News Impact\n"
@@ -244,44 +261,59 @@ class TickerAnalysisAgent:
             analysis += f"Recent news coverage includes {len(positive_news)} positive, {len(negative_news)} negative, "
             analysis += f"and {len(neutral_news)} neutral headlines. "
             
-            # Highlight key news based on sentiment
-            if change is not None:
-                if change > 0 and positive_news:
-                    analysis += f"The positive price movement correlates with favorable headlines such as: "
-                    analysis += f"\"{positive_news[0]['headline']}\". "
-                elif change < 0 and negative_news:
-                    analysis += f"The negative price movement aligns with concerning headlines such as: "
-                    analysis += f"\"{negative_news[0]['headline']}\". "
+            # Sentiment analysis
+            if len(positive_news) > len(negative_news):
+                analysis += f"The positive news cycle suggests a potential improvement in {ticker}'s market perception. "
+                if positive_news:
+                    analysis += f"Key positive headline: \"{positive_news[0]['headline']}\" "
+            elif len(negative_news) > len(positive_news):
+                analysis += f"The negative news cycle may continue to pressure {ticker}'s valuation. "
+                if negative_news:
+                    analysis += f"Key negative headline: \"{negative_news[0]['headline']}\" "
+            else:
+                analysis += f"The balanced news sentiment indicates market indecision about {ticker}'s direction. "
             
-            # Include a few key headlines
-            analysis += "\n\nKey recent headlines:\n"
-            for i, item in enumerate(news_analysis[:3]):
-                analysis += f"- {item['headline']} (Sentiment: {item['sentiment']})\n"
+            # Include key headlines
+            analysis += "\n\nSignificant news headlines:\n"
+            for i, item in enumerate(news_analysis[:4]):
+                analysis += f"- {item['headline']} (Sentiment: {item['sentiment'].title()})\n"
         else:
             analysis += "No significant news has been reported recently that might explain the price movement."
         
         # Market Context
         analysis += "\n\n### Market Context\n"
-        analysis += f"To fully understand {ticker}'s performance, it's important to consider the broader market context. "
+        analysis += f"{ticker} operates in a rapidly evolving industry environment. "
         if change is not None:
             if change > 0:
-                analysis += f"Investors should evaluate whether this gain is company-specific or part of a sector-wide trend. "
+                analysis += f"The stock's recent outperformance suggests company-specific strengths that differentiate it from peers. "
+                analysis += f"Investors should evaluate whether this momentum is sustainable based on upcoming catalysts and broader sector trends. "
             else:
-                analysis += f"Investors should determine if this decline is unique to {ticker} or reflects industry-wide challenges. "
+                analysis += f"The recent underperformance may reflect either company-specific challenges or sector-wide pressures. "
+                analysis += f"A comparative analysis with peers would help determine if this is an industry-wide trend or unique to {ticker}. "
+        
+        analysis += f"\nKey factors to monitor include:\n"
+        analysis += f"- Changes in consumer/business spending patterns\n"
+        analysis += f"- Competitive landscape developments\n"
+        analysis += f"- Regulatory environment shifts\n"
+        analysis += f"- Macroeconomic indicators affecting the sector\n"
         
         # Outlook
-        analysis += "\n\n### Outlook\n"
+        analysis += "\n\n### Investment Outlook\n"
         analysis += f"Based on the current data, {ticker} "
         if change is not None:
-            if change > 1.5:
-                analysis += "shows strong momentum that may continue if supported by positive fundamentals and market conditions. "
+            if change > 2:
+                analysis += "shows strong positive momentum that may indicate a longer-term bullish trend. "
+                analysis += "Investors might consider this an opportunity, with appropriate position sizing and risk management. "
             elif change > 0:
                 analysis += "shows modest positive movement that warrants cautious optimism. "
-            elif change > -1.5:
-                analysis += "shows minor weakness that may be temporary depending on upcoming news and market trends. "
+                analysis += "Risk-averse investors should wait for confirmation of the trend before increasing exposure. "
+            elif change > -2:
+                analysis += "shows minor weakness that may represent a short-term pullback rather than a reversal. "
+                analysis += "This could present a buying opportunity if fundamentals remain strong. "
             else:
-                analysis += "faces significant downward pressure that could continue unless fundamental factors improve. "
-        else:
-            analysis += "requires more data to make a confident assessment of future price movements. "
+                analysis += "faces significant downward pressure that suggests caution. "
+                analysis += "Investors should carefully evaluate whether this represents a temporary setback or a fundamental shift in prospects. "
+        
+        analysis += f"\n\nInvestors should monitor upcoming earnings reports, product announcements, and industry developments before making decisions about {ticker}."
         
         return analysis

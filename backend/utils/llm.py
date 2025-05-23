@@ -75,28 +75,29 @@ def generate_analysis_with_llm(ticker, query, price_info, news_info, price_chang
             direction = "increased" if change > 0 else "decreased" if change < 0 else "unchanged"
             price_section += f"Price Change: {direction} by ${abs(change):.2f} ({abs(change_percent):.2f}%) over {timeframe}\n"
         
-        # Create the prompt with stronger emphasis on addressing the query
+        # Create the prompt with stronger emphasis on creating distinct summary and detailed analysis
         prompt = f"""You are a professional financial analyst. The user has asked: "{query}"
 
-Please analyze {company_name} ({ticker}) stock to directly answer this question based on the following data:
+Please analyze {company_name} ({ticker}) stock based on the following data:
 
 {price_section}
 Recent News (with sentiment analysis):
 {news_section}
 
-Provide two detailed responses:
+Provide TWO COMPLETELY DIFFERENT responses:
 
 1. CONCISE SUMMARY (2-3 sentences): 
-   - Directly answer the user's question "{query}"
-   - Focus on the most relevant news/data points that explain the situation
-   - Be specific about the cause-effect relationship between events and stock movement
+   - A brief answer to the query that would fit in a small card
+   - Focus only on the essential facts without detail
 
-2. DETAILED ANALYSIS (4-5 paragraphs):
-   - Paragraph 1: Direct answer to "{query}" with supporting evidence from the news
-   - Paragraph 2: Deeper analysis of how specific news items relate to the stock movement
-   - Paragraph 3: Industry context and comparison with competitors if relevant
-   - Paragraph 4: Technical factors affecting the stock price (support/resistance levels, volume, etc.)
-   - Paragraph 5: Forward-looking insights and what investors should watch for
+2. DETAILED ANALYSIS (5 paragraphs minimum):
+   - Paragraph 1: In-depth answer to "{query}" with comprehensive evidence from news
+   - Paragraph 2: Technical analysis of price movements with support/resistance levels
+   - Paragraph 3: News impact analysis comparing positive vs negative headlines
+   - Paragraph 4: Industry context and competitor comparison 
+   - Paragraph 5: Forward-looking outlook with specific predictions
+
+IMPORTANT: The detailed analysis MUST be 5x longer than the summary and contain information not mentioned in the summary.
 
 Format your response as a JSON object with two keys: "summary" and "detailed_analysis".
 """

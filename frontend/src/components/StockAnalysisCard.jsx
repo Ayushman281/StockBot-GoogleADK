@@ -9,18 +9,64 @@ const StockAnalysisCard = ({ analysis, ticker }) => {
   const { summary = "No analysis available", detailed_analysis = "", details = {} } = analysis || {};
   const isLlmEnhanced = details.llm_enhanced;
   
+  // Initialize with either the actual detailed_analysis or generate a fallback
+  const getDetailedAnalysis = () => {
+    // If we have valid detailed analysis from the LLM, use it
+    if (typeof detailed_analysis === 'string' && detailed_analysis.trim().length > 0) {
+      return detailed_analysis;
+    }
+    
+    // Otherwise generate a more detailed version from other available data
+    let fallbackAnalysis = `## ${ticker} - Detailed Analysis\n\n`;
+    
+    // Add summary as first paragraph
+    fallbackAnalysis += `${summary}\n\n`;
+    
+    // Add technical section
+    fallbackAnalysis += `### Technical Analysis\n`;
+    if (details.price_analysis) {
+      const direction = details.price_analysis.direction || "unknown";
+      fallbackAnalysis += `The stock is currently showing a ${direction} trend. `;
+      if (direction === "up") {
+        fallbackAnalysis += "Technical indicators suggest continued momentum may be possible if volume remains supportive.\n\n";
+      } else if (direction === "down") {
+        fallbackAnalysis += "Technical indicators suggest caution is warranted until a support level is established.\n\n";
+      } else {
+        fallbackAnalysis += "Technical indicators are currently mixed, suggesting a sideways trading pattern may develop.\n\n";
+      }
+    }
+    
+    // Add news section if available
+    if (details.news_analysis && details.news_analysis.headlines) {
+      fallbackAnalysis += `### News Analysis\n`;
+      fallbackAnalysis += `Recent headlines that may be affecting ${ticker}:\n\n`;
+      
+      // Add headlines as bullet points
+      details.news_analysis.headlines.forEach((headline, i) => {
+        const sentiment = details.news_analysis.sentiments && details.news_analysis.sentiments[i] 
+          ? details.news_analysis.sentiments[i] 
+          : "neutral";
+        fallbackAnalysis += `- ${headline} (${sentiment})\n`;
+      });
+      
+      fallbackAnalysis += `\nTotal news items found: ${details.news_analysis.news_count || 0}\n\n`;
+    }
+    
+    // Add outlook section
+    fallbackAnalysis += `### Outlook\n`;
+    fallbackAnalysis += `Investors should monitor upcoming news and earnings reports for ${ticker} to better understand the company's trajectory. `;
+    fallbackAnalysis += `Market conditions and sector trends will also play a significant role in future price movements.`;
+    
+    return fallbackAnalysis;
+  };
+  
   const openModal = () => {
-    console.log("Opening modal with analysis:", detailed_analysis); // Debug log
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
   };
-
-  // Check if we have a non-empty detailed analysis to show
-  // Make sure detailed_analysis is a string before calling trim()
-  const hasDetailedAnalysis = typeof detailed_analysis === 'string' && detailed_analysis.trim().length > 0;
 
   return (
     <>
@@ -44,15 +90,13 @@ const StockAnalysisCard = ({ analysis, ticker }) => {
               {summary || "No analysis available for this stock."}
             </p>
             
-            {hasDetailedAnalysis && (
-              <button 
-                onClick={openModal}
-                className="mt-3 flex items-center text-[#1E40AF] text-sm font-medium hover:text-blue-700 transition-colors"
-              >
-                <span>View detailed analysis</span>
-                <ArrowUpRight className="w-3 h-3 ml-1" />
-              </button>
-            )}
+            <button 
+              onClick={openModal}
+              className="mt-3 flex items-center text-[#1E40AF] text-sm font-medium hover:text-blue-700 transition-colors"
+            >
+              <span>View detailed analysis</span>
+              <ArrowUpRight className="w-3 h-3 ml-1" />
+            </button>
           </div>
         </div>
       </div>
@@ -60,7 +104,7 @@ const StockAnalysisCard = ({ analysis, ticker }) => {
       <AnalysisModal 
         isOpen={isModalOpen}
         onClose={closeModal}
-        analysis={typeof detailed_analysis === 'string' ? detailed_analysis : ""}
+        analysis={getDetailedAnalysis()}
         ticker={ticker}
       />
     </>
